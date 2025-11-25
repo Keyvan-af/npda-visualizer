@@ -34,7 +34,7 @@ cd NPDA
 pip install streamlit
 
 # 3. Run!
-streamlit run NPDA.py
+streamlit run src/NPDA.py
 ```
 
 Open http://localhost:8501 → you're ready!
