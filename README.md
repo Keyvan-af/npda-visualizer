@@ -4,8 +4,6 @@ Built with **Python + Streamlit** — no React, no Node, no headaches.
 
 Live demo: just run `streamlit run NPDA.py`
 
-![screenshot](https://i.imgur.com/2fK8mNq.png)  
-*(Actual look of the app – clean, professional, animated)*
 
 ## Features
 
