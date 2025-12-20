@@ -1,9 +1,8 @@
-# NPDA.py — FINAL CLEAN & PROFESSIONAL VERSION
 import streamlit as st
 import ast
 import re
 from collections import deque
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 # ==============================
 # 1. NPDA ENGINE
@@ -15,43 +14,91 @@ class NPDA:
         self.z0 = start_stack
         self.F = final_states
 
-    def get_success_path(self, input_string: str) -> Optional[List[Dict]]:
-        queue = deque([(self.q0, input_string, [self.z0], [])])
+    def get_success_path(self, input_string: str) -> Optional[List[Dict[str, Any]]]:
+        queue = deque()
+        # (state, remaining_input, stack_list, path_so_far)
+        initial_stack = [self.z0]
+        initial_config = (self.q0, input_string, initial_stack, [])
+        queue.append(initial_config)
+        
+        # Initial step (starting configuration)
+        initial_step = {
+            "state": self.q0,
+            "input_left": input_string,
+            "stack": initial_stack.copy(),
+            "description": "START"
+        }
+        # path will contain full steps including descriptions
+        queue.append((self.q0, input_string, initial_stack, [initial_step]))
+        
         visited = set()
 
         while queue:
             state, inp, stack, path = queue.popleft()
-            current = {"state": state, "input_left": inp, "stack": stack.copy(), "description": ""}
 
+            # Create current configuration snapshot
+            current = {
+                "state": state,
+                "input_left": inp,
+                "stack": stack.copy(),
+                "description": ""  # will be filled by the move that led here
+            }
+
+            # Acceptance condition: no input left and in final state
             if not inp and state in self.F:
-                path.append({**current, "description": "ACCEPTED"})
-                return path + [current]
+                # Mark the final step as accepted
+                final_step = {**current, "description": "ACCEPTED"}
+                return path + [final_step]
 
-            sig = (state, inp, tuple(stack))
-            if sig in visited: continue
-            visited.add(sig)
-            if not stack: continue
+            # Avoid revisiting the exact same configuration
+            config_key = (state, inp, tuple(stack))
+            if config_key in visited:
+                continue
+            visited.add(config_key)
+
+            # Must have something on stack to pop
+            if not stack:
+                continue
             top = stack[-1]
 
             moves = []
+
+            # 1. Consume input symbol (if available)
             if inp:
                 key = (state, inp[0], top)
                 if key in self.delta:
-                    for ns, push in self.delta[key]:
-                        moves.append((ns, inp[1:], push, f"Read '{inp[0]}' → push '{push}'"))
+                    for new_state, push in self.delta[key]:
+                        symbol_read = inp[0]
+                        if push == "":
+                            desc = f"Read '{symbol_read}' → pop '{top}'"
+                        else:
+                            desc = f"Read '{symbol_read}' → pop '{top}', push '{push}'"
+                        moves.append((new_state, inp[1:], push, desc))
+
+            # 2. ε-transition (no input consumed)
             key = (state, "", top)
             if key in self.delta:
-                for ns, push in self.delta[key]:
-                    moves.append((ns, inp, push, f"ε-move → push '{push}'"))
+                for new_state, push in self.delta[key]:
+                    if push == "":
+                        desc = f"ε-move → pop '{top}'"
+                    else:
+                        desc = f"ε-move → pop '{top}', push '{push}'"
+                    moves.append((new_state, inp, push, desc))
 
-            for ns, ni, push, desc in moves:
-                new_stack = stack[:-1]
-                if push:
+            # Apply all possible moves
+            for new_state, new_inp, push, desc in moves:
+                new_stack = stack[:-1]  # pop top
+                if push:  # push can be string like "((" or "Z" or ""
+                    # Push in reverse order (rightmost symbol goes on top)
                     new_stack.extend(reversed(push))
-                new_path = path + [{**current, "description": desc}]
-                queue.append((ns, ni, new_stack, new_path))
-        return None
 
+                # Build new path: previous path + current state with description of the move
+                new_path_entry = {**current, "description": desc}
+                new_path = path + [new_path_entry]
+
+                queue.append((new_state, new_inp, new_stack, new_path))
+
+        return None  # No accepting path found
 # ==============================
 # 2. Safe parsers
 # ==============================
