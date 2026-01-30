@@ -1,8 +1,8 @@
 # NPDA Visualizer  
-**A beautiful, fully interactive Nondeterministic Pushdown Automaton simulator**  
-Built with **Python + Streamlit** — no React, no Node, no headaches.
+**A fully interactive Nondeterministic Pushdown Automaton simulator**  
+Built with **Python + Streamlit** 
 
-Live demo: just run `streamlit run NPDA.py`
+Live demo: just run `streamlit run src/NPDA.py`
 
 
 ## Features
@@ -95,8 +95,3 @@ NPDA/
 ## Author
 
 Built with love for Theory of Computation students and professors.
-
-Enjoy your perfect NPDA visualizer!  
-No more debugging React/Vite/Zustand just to see a stack pop.
-
-Just run `streamlit run NPDA.py` and teach/learn in style.
